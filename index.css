@@ -1,7 +1,7 @@
 /* GENERAL PAGE RULES */
 
 body {
-    font-family: "Karla", CenturyGothic, Geneva, AppleGothic, sans-serif;
+    font-family: "Karla", sans-serif;
     font-size: 1em;
 }
 
@@ -15,11 +15,20 @@ h1 {
     display: flex;
 }
 
+#left {
+    padding-left: 10%;
+    max-width:5em;
+}
+
+#middle {
+    max-width:40em;
+}
+
 a {
-	color:#660000;
+    color:#0d29fd;
 }
 
 a:hover {
-	color:#400000;
+    color:#fd0d8d;
 }
 
