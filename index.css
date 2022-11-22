@@ -37,3 +37,11 @@ a:hover {
     color:#fd0d8d;
 }
 
+#one{
+    vertical-align: middle;
+    display: inline-block;
+    line-height: 20px;
+    height: 15px;
+    font-size:1.5em;
+    color: #fd0d8d;
+}
