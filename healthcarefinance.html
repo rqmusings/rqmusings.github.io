@@ -55,7 +55,7 @@
         <p style="text-align: center;">Y = (&beta;<sub>1</sub> + &beta;<sub>2</sub> T + &beta;<sub>3</sub> T<sup>2</sup> + &hellip;. ) (&beta;'<sub>1</sub>x<sub>1</sub> + &beta;'<sub>2</sub>x<sub>2</sub> + &hellip;) + c</p>
         <p>Then expanding it out, suppose we believe we can model our beta function with a <em>k</em>th order Taylor series, i.e. our Taylor series has<em> k+1</em> terms. Our linear regression thus becomes</p>
         <p style="text-align: center;">Y = &beta;<sub>1,1</sub>x<sub>1</sub> + &beta;<sub>1,2</sub>x<sub>2</sub> + &hellip; + &beta;<sub>2,1</sub> T x<sub>1</sub> + &hellip;.&nbsp; + c</p>
-        <p>If x has m variables, this thus results in a linear regression on<em> (k+1)m</em> variables.</p>
+        <p>If x has m variables, this thus results in a linear regression on<em> m(k+1)</em> variables.</p>
         <p>As a conclusion, given a fixed X and a linear model in the above format, we get to see how the treatment effect changes the outcome Y; we can construct a plot of T.</p>
         <p>This conclusion can be met with a discussion on training and potential financial applications:</p>
         <center> <img src="stocks.png" width="70%"> </center>
@@ -65,18 +65,20 @@
         
         <p>Alas, let us continue. In finance, causal inference is always a potentially useful field to engage in. Data in the stock market is often extremely noisy and contains a lot of confounding variables, so understanding how a specific variable T affects price changes Y given a world input X is super difficult. If we can only observe X, T together, but we want to choose an ideal T given X, how will we ever understand the importance of T without causal inference?&nbsp;</p>
         <p>I'm sure there are other variables T that traders will have to decide upon, but the one I thought about is bid size. Of course, it is a common feature in optimization problems where one wants to minimize variance but maximize the earnings gained from their portfolio. There is usually a market impact feature involved, where quants will wonder if the size of their trade will actually impact their earnings in a day. For example, let's say you find stock ABC at price 100 and believe it will move up by 5% in 30 minutes if we sit here and make no trade. Obviously, we'd like to buy some ABC, and we're happy to buy a share at 102 if that is the only offer available: after all, we believe this would net us $3 in 30 minutes. But now, what if we know that 100,000 shares are up at 102? If we are going to buy 100,000 ABC shares, that is probably going to affect the price in 30 minutes differently than if we were to only buy one share.&nbsp;</p>
+        
         <p>To translate this intuition into a modelling decision, we want to run our modified linear regression on:</p>
-        <p><b>X = [x<sub>1</sub>, x<sub>2</sub>, ..., x<sub>n</sub>] </b>for order book features of stock ABC (which should also contain the price of the confirmed transaction)</p>
-        <p><b>T </b>for the bid size of a successful transaction</p>
-        <p><b>Y </b>for the predicted percentage change in price for ABC <b><em>n</em></b>seconds from now.</p>
         <ul>
-        <li>T has no bearing on X, (knowing the size of a bid coming in tells us nothing about the price of the current order book features)</li>
-        <li>T has no bearing on Y (the size of a bid doesn't tell us an exact percentage change for a stock in <b><em>n</em></b> seconds)</li>
-        <li>T and X tell us about how a stock price should change given the market impact of a trade.&nbsp;</li>
+        <li><b>X = [x<sub>1</sub>, x<sub>2</sub>, ..., x<sub>n</sub>] </b>for order book features of stock ABC (which should also contain the price of the confirmed transaction)</li>
+        <li><b>T </b>for the bid size of a successful transaction</li>
+        <li><b>Y </b>for the predicted percentage change in price for ABC <b><em>n </em></b> seconds from now.</li>
         </ul>
-        <p>This formulation allows us to essentially determine the <b>market impact</b> of a trade. We can essentially look at our linear regression and plot our bid size T vs predicted percentage change Y to tell us what sizing would yield us the greatest return of investment.&nbsp;</p>
+        <p>T has no bearing on X, (knowing the size of a bid coming in tells us nothing about the price of the current order book features)</p>
+        <p>T  has no bearing on Y (the size of a bid doesn't tell us an exact percentage change for a stock in <b><em>n</em></b> seconds)</p>
+        <p>T and X tell us about how a stock price should change given the market impact of a trade.&nbsp;</p>
+        </ul>
+        <p>This formulation allows us to essentially determine the <u>market impact</u> of a trade. We can essentially look at our linear regression and plot our bid size T vs predicted percentage change Y to tell us what sizing would yield us the greatest return of investment.&nbsp;</p>
         <h3>Why this is useful, as a thought experiment:</h3>
-        <p>Suppose we are a firm named <b>Asdf Trading</b> that just built this above model with 100% accuracy, and we are in a position where we want to start trading only blue chip stocks i.e. we have very little to no risk of losing all our money from our decisions, and we do not care about volatility. Stock ABC and DEF are both selling at price 100, and you have 10,000 shares worth of money to invest. We'll also say that there are sufficiently many sell orders up at a reasonable price.</p>
+        <p>Suppose we are a firm named <u>Asdf Trading</u> that just built this above model with 100% accuracy, and we are in a position where we want to start trading only blue chip stocks i.e. we have very little to no risk of losing all our money from our decisions, and we do not care about volatility. Stock ABC and DEF are both selling at price 100, and you have 10,000 shares worth of money to invest. We'll also say that there are sufficiently many sell orders up at a reasonable price.</p>
         <p>Our model says that given any sizing under 10,000 for ABC its value will go up by 2% in 30 minutes, whereas for DEF the value will go up by 3% if your new delta in stock position is below 5000, and 1% otherwise<sup>2</sup>. Then, you know that your optimal portfolio is 5,000 of DEF and 5,000 for ABC, and you will the stocks will be worth an average of 102.5 in 30 minutes. If we use a more traditional model that does not evaluate sizing, and just predicts 2% and 3% 30-minute futures for ABC and DEF respectively, your model would have told you to buy 10,000 shares of DEF which would be worth 101 in 30 minutes, which is a loss of $1.50 per share.</p>
         <p>Anyway, I think that's all I'll say for now. It would be so ideal to have some sort of order book model prediction to see how much better this idea works from a naive model, and then see how it makes decisions in the real world, but I can only hope to know.&nbsp;</p>
 
