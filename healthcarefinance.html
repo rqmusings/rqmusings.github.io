@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>A Crazy Healthcare Idea in Finance</title>
+
+    <meta charset="UTF-8">
+    <meta name="description" content="anonymous quant musings">
+    <meta name="author" content="Anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="index.css">
+    <link href='https://fonts.googleapis.com/css?family=Karla' rel='stylesheet'>
+</head>
+
+<body>
+    <div id='holder'>
+        <div id='left'></div>
+        <div id='middle'>
+        <center><h1>A Crazy Healthcare Idea in Finance</h1></center>
+        <br>
+        <center> <img src="hc2.png" width="70%"> </center>
+        <p><b>Disclaimer: I am not a causal inference expert by any stretch but I do think the idea is pretty cool and worth a discussion, email me at </b><span style="text-decoration: underline;"><b>randomquantmusings@gmail.com</b></span><b> if you have any feedback</b></p>
+        <h2><b>Introduction</b></h2>
+        <p>Treatment effects are an ubiquitous field of study in healthcare, either in attempts to model the true impact of a habit, i.e understanding the impact of smoking on some certain metric of people&rsquo;s health, or determining when to make an important treatment decision. As a motivating example for the latter point, consider a time series problem in healthcare where hospitals need to determine the optimal time to release a patient from the emergency room: we want to release a patient at the first time t where there is more benefit to release a patient (treatment T=1) than to keep them in hospital (treatment T=0). (Note: there are a lot more assumptions that need to be fulfilled for a model on the above task to hold, but this is just here to provide an intuition on determining a numerical value of treatment effect)</p>
+        <p>This intuition is behind the definition of average treatment effect (ATE), which measures the difference in mean outcomes between units assigned to treatment and units assigned to control. For binary decisions, the treatment effect for a given patient with features X with outcomes Y</p>
+        <p style="text-align: center;">ATE(X) = E[Y|X, T=1] - E[Y|X, T=0]</p>
+        <p>There were a few problems with computing this, of course. For a given patient X, they can only have received an irreversible decision T, so it&rsquo;s impossible to know what the other outcome would be. On the other hand, even the most baseline idea of &ldquo;Well, I can&rsquo;t say exactly how useful a treatment T is for a given X, so let me just consider all outcomes Y when treatment is 1 and see the outcome improvement over all outcomes Y when treatment is 0&rdquo; &mdash; because there can be a lot of confounding variables and bias within this analysis. If we consider smoker health and note that people of a lower income background are going to be smokers, then is it really only the smoking that contributes to lower health, or familial background already?</p>
+        <p>As a consequence, there have been a few invented approaches to modeling this effect:</p>
+        <br>
+        <h3>1. <span style="text-decoration: underline;">Propensity Score Matching (PSM)&nbsp;</span></h3>
+        <p>PSM takes the most intuitive way to solve this issue. Rather than just taking all people from the dataset, we first begin by running a logistic regression (or another model) for &ldquo;propensity score&rdquo; &mdash; which estimates the predicted probability p or log p/(1-p). Then, for a new patient X, to calculate their average treatment effect we would consider the mean for the nearest k neighbours (by propensity) who received treatment,&nbsp; then subtract this from the mean of the nearest k neighbours by propensity.&nbsp;</p>
+        <br>
+        <p>While this has been the standard framework for some time, a relatively recent paper by K&uuml;nzel has introduced the concepts of</p>
+        <br>
+        <h3>2. <a href="https://arxiv.org/pdf/1706.03461.pdf" target="_blank" rel="noopener">Meta-Learners</a></h3>
+        <p>Meta-learners design an approach to average treatment effect where one or more regressors' predictions are used to model the ATE indirectly.&nbsp;</p>
+        <p>I've attached a link above already, but just in case, we briefly detail three approaches below:</p>
+        <p>The <b>T-Learner </b>models the treatment response and control response functions separately using two regressors mu<sub>0</sub> and mu<sub>1</sub>, where mu<sub>1</sub> predicts E[Y|X,T=1] and mu<sub>0</sub> predicts E[Y|X, T=0]. The ATE is just the difference between the two values.</p>
+        <p>The<b> S-Learner</b> models the treatment and control response functions with just one regressor mu, and T is just a binary variable fed into the model. In practice this model does not seem to do as well as the T-learner.</p>
+        <p>The <b>X-Learner</b> model is an extension of the T-learner, with the key advantage of performing better in unbalanced datasets. It performs a multi-stage modeling that first estimates treatment response and control response functions separately using two regressors mu<sub>0</sub> and mu<sub>1</sub>, similar to the T-learner. You can read more via <a href="https://statisticaloddsandends.wordpress.com/2022/05/20/t-learners-s-learners-and-x-learners/" target="_blank" rel="noopener">here</a> and <a href="https://arxiv.org/pdf/1706.03461.pdf" target="_blank" rel="noopener">here</a>.</p>
+        <br>
+        <h2><b>ATE for a continuous Treatment Variable</b></h2>
+        <p>Before we start any discussion on finance, we must expand upon the above content and consider the above ATE discussion but for a continuous treatment variable T. We introduce the problem statement:</p>
+        <p><em>We are given T a continuous variable, X a predictive set of variables, and Y a desired outcome variable. Y depends on X,&nbsp; T has no bearing on X, and T has no bearing on Y. However, it turns out that E[Y|X, T] is better than just E[Y|X]. How do we determine the importance of T?</em></p>
+        <p>At first glance, we quickly realize we no longer can use any ideas of a T or an X learner, because it&rsquo;s impossible to build an uncountably infinite set of models. On the other hand, S-learners are generally worse in practice for such a model, because we know T has no bearing on Y. As a result, we should not train a linear regression/S-learner and look at the beta coefficient/compute the Shapley score to determine the importance of T.</p>
+        <p>This is a very potentially important problem in the field of healthcare, and the solution to this is not something I&rsquo;ve found online yet (although I&rsquo;d love to be proven wrong here). For a potential use case of this model, let's say we want to consider the smoking impact problem but in a more continuous sense, where our treatment variable T can be the number of cigarettes per week, but we keep the same variable X and Y as before.</p>
+        <p>Here is my proposed solution:&nbsp;</p>
+        <p>For our new continuous treatment variable T, we utilize just a <span style="text-decoration: underline;">single generalised linear regression model</span></p>
+        <p style="text-align: center;">Y = &beta;X + c</p>
+        <p>as we do not plan to train an uncountably infinite number of models (unlike a generalized T-learner approach!). But as a result, our beta variable needs to be a function with respect to T. This thus results in</p>
+        <p style="text-align: center;">Y = f(T) X + c</p>
+        <p>Suppose we have no prior of what f(T) should look like. We still want this function to be linear, however, so the best option is to consider a Taylor Series Expansion of f(T), where f(T) can be expressed as&nbsp;</p>
+        <p style="text-align: center;">&beta;<sub>1</sub> + &beta;<sub>2</sub> T + &beta;<sub>3</sub> T<sup>2</sup> + &hellip;.&nbsp;</p>
+        <p>Now our linear regression is equivalent to&nbsp;</p>
+        <p style="text-align: center;">Y = (&beta;<sub>1</sub> + &beta;<sub>2</sub> T + &beta;<sub>3</sub> T<sup>2</sup> + &hellip;. ) (&beta;'<sub>1</sub>x<sub>1</sub> + &beta;'<sub>2</sub>x<sub>2</sub> + &hellip;) + c</p>
+        <p>Then expanding it out, suppose we believe we can model our beta function with a <em>k</em>th order Taylor series, i.e. our Taylor series has<em> k+1</em> terms. Our linear regression thus becomes</p>
+        <p style="text-align: center;">Y = &beta;<sub>1,1</sub>x<sub>1</sub> + &beta;<sub>1,2</sub>x<sub>2</sub> + &hellip; + &beta;<sub>2,1</sub> T x<sub>1</sub> + &hellip;.&nbsp; + c</p>
+        <p>If x has m variables, this thus results in a linear regression on<em> (k+1)m</em> variables.</p>
+        <p>As a conclusion, given a fixed X and a linear model in the above format, we get to see how the treatment effect changes the outcome Y; we can construct a plot of T.</p>
+        <p>This conclusion can be met with a discussion on training and potential financial applications:</p>
+        <center> <img src="stocks.png" width="70%"> </center>
+        <br>
+        <h2><b>A Financial Application of ATE</b></h2>
+        <p>I will preface this discussion by saying that I believe that my proposed model is likely to be most useful for high-frequency trading (HFT).<sup>1</sup> However, for an independent trader, I believe there is more alpha in mid-frequency trading (MFT): after all, I do not have that much confidence in my ability to generate a model with enough latency <span style="text-decoration: underline;"><b>AND</b></span> accuracy to beat HRT, Virtu, Citadel unfortunately. The reason this matters is because the field of high-frequency trading is particularly unforgiving, where the winner takes all.</p>
+        
+        <p>Alas, let us continue. In finance, causal inference is always a potentially useful field to engage in. Data in the stock market is often extremely noisy and contains a lot of confounding variables, so understanding how a specific variable T affects price changes Y given a world input X is super difficult. If we can only observe X, T together, but we want to choose an ideal T given X, how will we ever understand the importance of T without causal inference?&nbsp;</p>
+        <p>I'm sure there are other variables T that traders will have to decide upon, but the one I thought about is bid size. Of course, it is a common feature in optimization problems where one wants to minimize variance but maximize the earnings gained from their portfolio. There is usually a market impact feature involved, where quants will wonder if the size of their trade will actually impact their earnings in a day. For example, let's say you find stock ABC at price 100 and believe it will move up by 5% in 30 minutes if we sit here and make no trade. Obviously, we'd like to buy some ABC, and we're happy to buy a share at 102 if that is the only offer available: after all, we believe this would net us $3 in 30 minutes. But now, what if we know that 100,000 shares are up at 102? If we are going to buy 100,000 ABC shares, that is probably going to affect the price in 30 minutes differently than if we were to only buy one share.&nbsp;</p>
+        <p>To translate this intuition into a modelling decision, we want to run our modified linear regression on:</p>
+        <p><b>X = [x<sub>1</sub>, x<sub>2</sub>, ..., x<sub>n</sub>] </b>for order book features of stock ABC (which should also contain the price of the confirmed transaction)</p>
+        <p><b>T </b>for the bid size of a successful transaction</p>
+        <p><b>Y </b>for the predicted percentage change in price for ABC <b><em>n</em></b>seconds from now.</p>
+        <ul>
+        <li>T has no bearing on X, (knowing the size of a bid coming in tells us nothing about the price of the current order book features)</li>
+        <li>T has no bearing on Y (the size of a bid doesn't tell us an exact percentage change for a stock in <b><em>n</em></b> seconds)</li>
+        <li>T and X tell us about how a stock price should change given the market impact of a trade.&nbsp;</li>
+        </ul>
+        <p>This formulation allows us to essentially determine the <b>market impact</b> of a trade. We can essentially look at our linear regression and plot our bid size T vs predicted percentage change Y to tell us what sizing would yield us the greatest return of investment.&nbsp;</p>
+        <h3>Why this is useful, as a thought experiment:</h3>
+        <p>Suppose we are a firm named <b>Asdf Trading</b> that just built this above model with 100% accuracy, and we are in a position where we want to start trading only blue chip stocks i.e. we have very little to no risk of losing all our money from our decisions, and we do not care about volatility. Stock ABC and DEF are both selling at price 100, and you have 10,000 shares worth of money to invest. We'll also say that there are sufficiently many sell orders up at a reasonable price.</p>
+        <p>Our model says that given any sizing under 10,000 for ABC its value will go up by 2% in 30 minutes, whereas for DEF the value will go up by 3% if your new delta in stock position is below 5000, and 1% otherwise<sup>2</sup>. Then, you know that your optimal portfolio is 5,000 of DEF and 5,000 for ABC, and you will the stocks will be worth an average of 102.5 in 30 minutes. If we use a more traditional model that does not evaluate sizing, and just predicts 2% and 3% 30-minute futures for ABC and DEF respectively, your model would have told you to buy 10,000 shares of DEF which would be worth 101 in 30 minutes, which is a loss of $1.50 per share.</p>
+        <p>Anyway, I think that's all I'll say for now. It would be so ideal to have some sort of order book model prediction to see how much better this idea works from a naive model, and then see how it makes decisions in the real world, but I can only hope to know.&nbsp;</p>
+
+        <h3><b>Footnotes:</b></h3>
+        <p>1 - My proposed model should be more useful in HFT for one important reason: we leverage an important assumption that trades and data are normal and iid. In other words, if we have a dataset of trades done for one stock, we can reasonably assume that this trade and the market impact we have at this current moment affects the price of a commodity/stock within a certain time frame, but it has little impact on other stocks in the same industry or the stock price outside the time frame we would like to consider. (It's impossible to get rid of all the noise, but we can guarantee that our modeling assumptions are closer to the real world, and if we can just be right 51% of the time then our self-owned hedge fund will be printing).</p>
+        <p>On the other hand, within a mid-frequency trading time frame, you are not only prone to a lot more extra noise throughout this time, but your previous large 3,000,000 bid for AAPL could have an impact on other stocks and the next day as well. This means that our trained model will report an overrated accuracy in backtesting due to the fact it can 'cheat' and pretend to learn more about the market impact of one trade by seeing other points in the dataset.</p>
+        <p>2 - To explain why this is a possible scenario, let's say you are crossing a huge short sell from another institutional trader like SIG. From an above 5000-size transaction, people see a large short position held by SIG and now want to sell stocks as well, thus driving prices down. However, you are undeterred because you have the gated knowledge that this stock will actually go up. Unfortunately, now it will go up less than it should.</p>
+        </p>
+        
+        <a href="air.html">back</a>
+        </div>
+    </div>
+</body>
+</html>
